@@ -482,9 +482,11 @@ query_recordid() {
 update_record() {
     send_request "UpdateDomainRecord" "RR=$AliDDNS_SubDomainName&RecordId=$1&SignatureMethod=HMAC-SHA1&SignatureNonce=$timestamp&SignatureVersion=1.0&TTL=$AliDDNS_TTL&Timestamp=$timestamp&Type=A&Value=$AliDDNS_LocalIP"
 }
-# 添加记录值
+# 添加记录值（DomainName按字母序必须排在Format前面，不能使用send_request）
 add_record() {
-    send_request "AddDomainRecord" "DomainName=$AliDDNS_DomainName&RR=$AliDDNS_SubDomainName&SignatureMethod=HMAC-SHA1&SignatureNonce=$timestamp&SignatureVersion=1.0&TTL=$AliDDNS_TTL&Timestamp=$timestamp&Type=A&Value=$AliDDNS_LocalIP"
+    local args="AccessKeyId=$AliDDNS_AK&Action=AddDomainRecord&DomainName=$AliDDNS_DomainName&Format=json&RR=$AliDDNS_SubDomainName&SignatureMethod=HMAC-SHA1&SignatureNonce=$timestamp&SignatureVersion=1.0&TTL=$AliDDNS_TTL&Timestamp=$timestamp&Type=A&Value=$AliDDNS_LocalIP&Version=2015-01-09"
+    local hash=$(echo -n "GET&%2F&$(enc "$args")" | openssl dgst -sha1 -hmac "$AliDDNS_SK&" -binary | openssl base64)
+    curl -s "http://alidns.aliyuncs.com/?$args&Signature=$(enc "$hash")"
 }
 
 # RecordID更新（支持自动添加记录）
